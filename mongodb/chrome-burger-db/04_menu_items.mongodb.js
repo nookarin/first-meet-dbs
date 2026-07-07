@@ -44,3 +44,7 @@ db.menu_items.insertMany([
     ]
   }
 ]);
+
+//find all order dates and show menu item details for each order
+db.menu_items.aggregate([
+  {$lookup: {}}])
