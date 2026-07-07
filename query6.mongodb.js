@@ -1,7 +1,7 @@
 use("sample_mflix");
 
 //Find all movies in the "movies" collection released between 1950 and 1970 (inclusive) that are documented as being shown in countries located in the USA.
-//db.movies.find({ countries: {$in: ["USA"]}, year: {$gte: 1950, $lte: 1970} }) 
+db.movies.find({ countries: {$in: ["USA"]}, year: {$gte: 1950, $lte: 1970} }) 
 
 //What is the number of movies in the "movies" collection with genres "Drama" and "History" released after the year 1970?
 //db.movies.find({ genres: { $all: ["Drama", "History"] }, released: { $gt: ISODate("1970-01-01T00:00:00Z") } }).count()
@@ -25,4 +25,4 @@ use("sample_mflix");
 //db.movies.find( { $or: [ { languages: "French" }, { languages: "Spanish" } ] }, { _id: 0, title: 1, languages: 1 } );
 
 //Retrieve up to 10 movies that are released after 2010 and belong to the Drama genre or have IMDB rating >= 8).
-db.movies.find( { year: { $gt: 2010 }, $or: [ { genres: "Drama" }, { "imdb.rating": { $gte: 8 } } ] }, { _id: 0, title: 1, year: 1, genres: 1, "imdb.rating": 1 } ).limit(10);
+//db.movies.find( { year: { $gt: 2010 }, $or: [ { genres: "Drama" }, { "imdb.rating": { $gte: 8 } } ] }, { _id: 0, title: 1, year: 1, genres: 1, "imdb.rating": 1 } ).limit(10);
