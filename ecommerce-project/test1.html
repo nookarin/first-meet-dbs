@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FairFizz — Premium Sodas & Mocktails</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Playfair+Display:ital,wght@0,700;1,700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --black: #0a0a0a;
+      --magenta: #d946ef;
+      --light-magenta: #f5d0fe;
+      --white: #fafafa;
+      --gray: #a1a1aa;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: var(--black);
+      color: var(--white);
+      font-family: 'Inter', sans-serif;
+      overflow-x: hidden;
+    }
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: var(--black); }
+    ::-webkit-scrollbar-thumb { background: var(--magenta); border-radius: 4px; }
+
+    .glass {
+      background: rgba(255,255,255,0.04);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+    .glass-card {
+      background: rgba(255,255,255,0.04);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 16px;
+      transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .glass-card:hover {
+      border-color: var(--magenta);
+      transform: translateY(-6px) scale(1.02);
+      box-shadow: 0 12px 48px rgba(217,70,239,0.15);
+    }
+    .btn-primary {
+      background: var(--magenta);
+      color: white;
+      padding: 12px 32px;
+      border-radius: 999px;
+      font-weight: 700;
+      font-size: 1rem;
+      border: none;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn-primary:hover {
+      background: #c026d3;
+      box-shadow: 0 0 32px rgba(217,70,239,0.4);
+      transform: scale(1.04);
+    }
+    .btn-outline {
+      background: transparent;
+      color: var(--magenta);
+      padding: 10px 28px;
+      border-radius: 999px;
+      font-weight: 600;
+      border: 2px solid var(--magenta);
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .btn-outline:hover {
+      background: var(--magenta);
+      color: white;
+      box-shadow: 0 0 24px rgba(217,70,239,0.3);
+    }
+
+    .mood-pill {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 24px;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+      border: 2px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.03);
+      color: var(--gray);
+      font-weight: 600;
+      user-select: none;
+    }
+    .mood-pill:hover {
+      border-color: var(--magenta);
+      color: var(--white);
+    }
+    .mood-pill.active {
+      background: var(--magenta);
+      border-color: var(--magenta);
+      color: white;
+      box-shadow: 0 0 24px rgba(217,70,239,0.3);
+    }
+    .mood-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    #particle-canvas {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .soda-can {
+      width: 200px;
+      height: 280px;
+      position: relative;
+      transform-style: preserve-3d;
+      animation: float 4s ease-in-out infinite;
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0px) rotate(-2deg); }
+      50% { transform: translateY(-16px) rotate(2deg); }
+    }
+    .can-body {
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(145deg, #1a1a2e 0%, #16213e 40%, #0f3460 100%);
+      border-radius: 30% 30% 20% 20%;
+      position: relative;
+      overflow: hidden;
+      box-shadow:
+        inset -8px -8px 20px rgba(0,0,0,0.6),
+        inset 8px 8px 20px rgba(255,255,255,0.05),
+        0 20px 60px rgba(217,70,239,0.15);
+    }
+    .can-body::before {
+      content: '';
+      position: absolute;
+      top: 10%;
+      left: -20%;
+      width: 70%;
+      height: 80%;
+      background: linear-gradient(90deg, rgba(255,255,255,0.08), transparent);
+      border-radius: 50%;
+      transform: rotate(-20deg);
+    }
+    .can-label {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-family: 'Playfair Display', serif;
+      font-size: 1.6rem;
+      color: var(--magenta);
+      text-shadow: 0 0 40px rgba(217,70,239,0.3);
+      letter-spacing: 3px;
+      text-align: center;
+    }
+    .can-label small {
+      display: block;
+      font-size: 0.6rem;
+      font-family: 'Inter', sans-serif;
+      font-weight: 600;
+      letter-spacing: 6px;
+      color: var(--gray);
+      margin-top: 4px;
+    }
+    .can-top {
+      position: absolute;
+      top: -8px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 60%;
+      height: 20px;
+      background: linear-gradient(180deg, #2a2a3e, #1a1a2e);
+      border-radius: 50%;
+      border: 2px solid rgba(255,255,255,0.06);
+    }
+    .can-bottom {
+      position: absolute;
+      bottom: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 55%;
+      height: 18px;
+      background: linear-gradient(0deg, #2a2a3e, #1a1a2e);
+      border-radius: 50%;
+      border: 2px solid rgba(255,255,255,0.06);
+    }
+
+    .fizz-bubble {
+      position: absolute;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, rgba(217,70,239,0.4), rgba(217,70,239,0.05));
+      pointer-events: none;
+      animation: rise linear infinite;
+    }
+    @keyframes rise {
+      0% { transform: translateY(0) scale(1); opacity: 0; }
+      10% { opacity: 0.8; }
+      90% { opacity: 0.6; }
+      100% { transform: translateY(-120px) scale(0.3); opacity: 0; }
+    }
+
+    .product-card {
+      opacity: 1;
+      transform: scale(1);
+      transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .product-card.hidden-card {
+      opacity: 0;
+      transform: scale(0.8);
+      pointer-events: none;
+      position: absolute;
+    }
+    .product-grid-inner {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 24px;
+      position: relative;
+    }
+    .product-grid-inner.has-hidden {
+      min-height: 400px;
+    }
+
+    .sugar-tag {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 999px;
+      font-size: 0.7rem;
+      font-weight: 600;
+    }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 6px;
+      border-radius: 3px;
+      background: linear-gradient(90deg, #3f3f46, var(--magenta));
+      outline: none;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--magenta);
+      cursor: pointer;
+      box-shadow: 0 0 20px rgba(217,70,239,0.4);
+      transition: 0.2s;
+    }
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+    }
+    input[type="range"]::-moz-range-thumb {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--magenta);
+      cursor: pointer;
+      border: none;
+    }
+
+    .hero-glow {
+      position: absolute;
+      width: 500px;
+      height: 500px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(217,70,239,0.08), transparent 70%);
+      top: -100px;
+      right: -100px;
+      pointer-events: none;
+    }
+    .hero-glow-2 {
+      position: absolute;
+      width: 400px;
+      height: 400px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(217,70,239,0.05), transparent 70%);
+      bottom: -80px;
+      left: -80px;
+      pointer-events: none;
+    }
+
+    .flavor-label {
+      font-size: 0.75rem;
+      letter-spacing: 2px;
+      font-weight: 600;
+      color: var(--gray);
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+
+    @media (max-width: 768px) {
+      .product-grid-inner {
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        gap: 16px;
+      }
+      .soda-can {
+        width: 140px;
+        height: 200px;
+      }
+      .can-label { font-size: 1rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav class="glass fixed top-0 left-0 right-0 z-50 px-6 py-4" style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+    <div class="max-w-7xl mx-auto flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div style="width:32px;height:32px;border-radius:8px;background:var(--magenta);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1.1rem;color:white;">F</div>
+        <span style="font-weight:800;font-size:1.3rem;letter-spacing:1px;">FairFizz</span>
+      </div>
+      <div class="hidden md:flex items-center gap-8 text-sm font-medium" style="color:var(--gray);">
+        <a href="#" class="hover:text-white transition-colors" style="color:var(--white);">Shop</a>
+        <a href="#" class="hover:text-white transition-colors">About</a>
+        <a href="#" class="hover:text-white transition-colors">Contact</a>
+      </div>
+      <div class="flex items-center gap-4">
+        <button class="btn-primary text-sm px-5 py-2" style="font-size:0.85rem;">Cart (0)</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="relative min-h-screen flex items-center overflow-hidden pt-24" style="background: radial-gradient(ellipse 80% 60% at 50% 40%, #1a0a1e, var(--black) 80%);">
+    <div class="hero-glow"></div>
+    <div class="hero-glow-2"></div>
+
+    <canvas id="particle-canvas"></canvas>
+
+    <div class="max-w-7xl mx-auto px-6 relative z-10 w-full">
+      <div class="flex flex-col lg:flex-row items-center gap-12 lg:gap-20">
+        <!-- Text -->
+        <div class="flex-1 text-center lg:text-left">
+          <p class="flavor-label">Premium Sodas & Mocktails</p>
+          <h1 class="text-5xl md:text-7xl font-extrabold leading-tight mt-2" style="letter-spacing:-1px;">
+            Fizz That<br/>
+            <span style="color:var(--magenta);">Matters</span>
+          </h1>
+          <p class="mt-6 text-lg" style="color:var(--gray);max-width:480px;">
+            Bold flavors, zero compromises. Discover craft sodas and mocktails made with real ingredients — delivered to your door.
+          </p>
+          <div class="flex flex-wrap gap-4 mt-8 justify-center lg:justify-start">
+            <button class="btn-primary" onclick="document.getElementById('products').scrollIntoView({behavior:'smooth'})">
+              Explore Flavors
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </button>
+            <button class="btn-outline" onclick="document.getElementById('products').scrollIntoView({behavior:'smooth'})">
+              View All Flavors
+            </button>
+          </div>
+        </div>
+        <!-- 3D Can -->
+        <div class="flex-1 flex justify-center lg:justify-end relative">
+          <div class="soda-can" id="sodaCan">
+            <div class="can-body">
+              <div class="can-top"></div>
+              <div class="can-label">
+                FairFizz
+                <small>Premium</small>
+              </div>
+              <div class="can-bottom"></div>
+            </div>
+          </div>
+          <!-- floating fizz bubbles around can -->
+          <div id="canBubbles" style="position:absolute;inset:0;pointer-events:none;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- scroll indicator -->
+    <div class="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2" style="color:var(--gray);">
+      <span class="text-xs font-semibold uppercase tracking-widest">Scroll</span>
+      <div style="width:1px;height:40px;background:linear-gradient(180deg,var(--magenta),transparent);animation:scrollPulse 2s ease-in-out infinite;"></div>
+    </div>
+    <style>
+      @keyframes scrollPulse {
+        0%, 100% { opacity: 0.3; transform: scaleY(1); }
+        50% { opacity: 1; transform: scaleY(1.3); }
+      }
+    </style>
+  </section>
+
+  <!-- FLAVOR MOOD SELECTOR + CARBONATION SLIDER -->
+  <section class="py-20 px-6" style="background:var(--black);" id="products">
+    <div class="max-w-7xl mx-auto">
+      <div class="text-center mb-14">
+        <p class="flavor-label">Find Your Vibe</p>
+        <h2 class="text-4xl md:text-5xl font-extrabold mt-2">Choose Your <span style="color:var(--magenta);">Mood</span></h2>
+      </div>
+
+      <div class="flex flex-wrap justify-center gap-3 mb-10" id="moodFilter">
+        <div class="mood-pill active" data-mood="all">
+          <div class="mood-dot" style="background:var(--magenta);"></div>
+          All
+        </div>
+        <div class="mood-pill" data-mood="sweet">
+          <div class="mood-dot" style="background:#ec4899;"></div>
+          Sweet
+        </div>
+        <div class="mood-pill" data-mood="tart">
+          <div class="mood-dot" style="background:#eab308;"></div>
+          Tart
+        </div>
+        <div class="mood-pill" data-mood="spicy">
+          <div class="mood-dot" style="background:#ef4444;"></div>
+          Spicy
+        </div>
+        <div class="mood-pill" data-mood="fruity">
+          <div class="mood-dot" style="background:#a855f7;"></div>
+          Fruity
+        </div>
+      </div>
+
+      <!-- Carbonation Slider -->
+      <div class="max-w-xl mx-auto mb-12 glass-card px-8 py-6">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-sm font-semibold" style="color:var(--gray);">🌊 Flat</span>
+          <span class="text-sm font-semibold" style="color:var(--magenta);" id="carbonationLabel">⚡ Medium</span>
+          <span class="text-sm font-semibold" style="color:var(--gray);">💥 Explosive</span>
+        </div>
+        <input type="range" id="carbonationSlider" min="0" max="100" value="50" />
+        <p class="text-xs mt-3 text-center" style="color:var(--gray);">Slide to adjust the fizz level</p>
+      </div>
+
+      <!-- Product Grid -->
+      <div class="product-grid-inner" id="productGrid"></div>
+    </div>
+  </section>
+
+
+
+  <!-- FOOTER -->
+  <footer class="py-12 px-6" style="border-top:1px solid rgba(255,255,255,0.05);">
+    <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+      <div class="flex items-center gap-3">
+        <div style="width:28px;height:28px;border-radius:6px;background:var(--magenta);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:0.9rem;color:white;">F</div>
+        <span style="font-weight:700;letter-spacing:1px;">FairFizz</span>
+      </div>
+      <div class="flex gap-8 text-sm" style="color:var(--gray);">
+        <a href="#" class="hover:text-white transition-colors">Privacy</a>
+        <a href="#" class="hover:text-white transition-colors">Terms</a>
+        <a href="#" class="hover:text-white transition-colors">Shipping</a>
+        <a href="#" class="hover:text-white transition-colors">FAQ</a>
+      </div>
+      <p class="text-xs" style="color:var(--gray);">&copy; 2026 FairFizz. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script>
+    // ===== PRODUCT DATA =====
+    const products = [
+      { id:1, name:"Classic Cola", brand:"FairFizz", flavor:"Cola", flavorColor:"#3a0ca3", size:"355ml", price:2.49, sugar:true, caffeine:true, mood:"sweet", carbonation:70, desc:"Bold, refreshing cola with real cane sugar.", stock:150 },
+      { id:2, name:"Sugar-Free Cola", brand:"FairFizz", flavor:"Cola", flavorColor:"#3a0ca3", size:"355ml", price:2.49, sugar:false, caffeine:true, mood:"sweet", carbonation:75, desc:"All the cola taste, zero sugar.", stock:120 },
+      { id:3, name:"Sparkling Lemonade", brand:"Citrus Wave", flavor:"Lemon", flavorColor:"#facc15", size:"355ml", price:2.99, sugar:true, caffeine:false, mood:"tart", carbonation:60, desc:"Zesty lemon fizz made with real lemons.", stock:200 },
+      { id:4, name:"Diet Sparkling Lemonade", brand:"Citrus Wave", flavor:"Lemon", flavorColor:"#facc15", size:"355ml", price:2.99, sugar:false, caffeine:false, mood:"tart", carbonation:65, desc:"Sugar-free lemon bliss.", stock:180 },
+      { id:5, name:"Root Beer Float", brand:"FairFizz", flavor:"Root Beer", flavorColor:"#713f12", size:"355ml", price:3.29, sugar:true, caffeine:false, mood:"sweet", carbonation:50, desc:"Creamy root beer with a rich finish.", stock:90 },
+      { id:6, name:"Caffeine-Free Cola", brand:"FairFizz", flavor:"Cola", flavorColor:"#3a0ca3", size:"355ml", price:2.49, sugar:true, caffeine:false, mood:"sweet", carbonation:72, desc:"Classic cola, caffeine-free.", stock:75 },
+      { id:7, name:"Ginger Zing", brand:"Spice Co.", flavor:"Ginger", flavorColor:"#ea580c", size:"355ml", price:3.49, sugar:true, caffeine:false, mood:"spicy", carbonation:80, desc:"Fiery ginger kick with a crisp finish.", stock:60 },
+      { id:8, name:"Sugar-Free Ginger Zing", brand:"Spice Co.", flavor:"Ginger", flavorColor:"#ea580c", size:"355ml", price:3.49, sugar:false, caffeine:false, mood:"spicy", carbonation:82, desc:"All the heat, none of the sugar.", stock:55 },
+      { id:9, name:"Blue Raspberry Fizz", brand:"FairFizz", flavor:"Raspberry", flavorColor:"#2563eb", size:"355ml", price:2.79, sugar:true, caffeine:true, mood:"fruity", carbonation:78, desc:"Bold berry with a caffeine kick.", stock:140 },
+      { id:10, name:"Tropical Punch", brand:"Island Breeze", flavor:"Tropical", flavorColor:"#f97316", size:"355ml", price:3.29, sugar:true, caffeine:false, mood:"fruity", carbonation:55, desc:"Mango, pineapple, passion fruit.", stock:110 },
+      { id:11, name:"Diet Tropical Punch", brand:"Island Breeze", flavor:"Tropical", flavorColor:"#f97316", size:"355ml", price:3.29, sugar:false, caffeine:false, mood:"fruity", carbonation:58, desc:"Island vibes, no sugar.", stock:95 },
+      { id:12, name:"Cherry Bomb", brand:"FairFizz", flavor:"Cherry", flavorColor:"#dc2626", size:"355ml", price:2.79, sugar:true, caffeine:true, mood:"fruity", carbonation:85, desc:"Intense cherry with a caffeine charge.", stock:130 },
+      { id:13, name:"Grape Fizz", brand:"FairFizz", flavor:"Grape", flavorColor:"#7c3aed", size:"355ml", price:2.79, sugar:true, caffeine:false, mood:"fruity", carbonation:68, desc:"Sweet grape that pops.", stock:85 },
+      { id:14, name:"Orange Cream Soda", brand:"FairFizz", flavor:"Orange", flavorColor:"#f97316", size:"355ml", price:3.49, sugar:true, caffeine:false, mood:"sweet", carbonation:45, desc:"Vanilla-orange fusion.", stock:70 },
+      { id:15, name:"Large Classic Cola", brand:"FairFizz", flavor:"Cola", flavorColor:"#3a0ca3", size:"500ml", price:3.49, sugar:true, caffeine:true, mood:"sweet", carbonation:72, desc:"Bigger bottle, same bold taste.", stock:100 },
+      { id:16, name:"Large Sugar-Free Cola", brand:"FairFizz", flavor:"Cola", flavorColor:"#3a0ca3", size:"500ml", price:3.49, sugar:false, caffeine:true, mood:"sweet", carbonation:75, desc:"Big bottle, zero sugar.", stock:90 },
+      { id:17, name:"Blue Hawaii", brand:"FairFizz", flavor:"Blue Hawaii", flavorColor:"#06b6d4", size:"355ml", price:3.99, sugar:true, caffeine:false, mood:"fruity", carbonation:50, desc:"Pineapple, lime & blue curacao.", stock:80 },
+      { id:18, name:"Strawberry Lemonade", brand:"FairFizz", flavor:"Strawberry Lemonade", flavorColor:"#f43f5e", size:"355ml", price:3.49, sugar:true, caffeine:false, mood:"tart", carbonation:55, desc:"Strawberry fused with tangy lemon.", stock:110 },
+      { id:19, name:"GRAPE LEMONADE", brand:"FairFizz", flavor:"GRAPE LEMONADE", flavorColor:"#a855f7", size:"355ml", price:3.49, sugar:true, caffeine:false, mood:"fruity", carbonation:60, desc:"Bold grape meets zesty lemonade.", stock:95 },
+      { id:20, name:"MOJITO", brand:"FairFizz", flavor:"MOJITO", flavorColor:"#22c55e", size:"355ml", price:3.99, sugar:true, caffeine:false, mood:"tart", carbonation:80, desc:"Non-alcoholic mojito with mint & lime.", stock:70 },
+      { id:21, name:"Punch", brand:"FairFizz", flavor:"Punch", flavorColor:"#e11d48", size:"355ml", price:3.29, sugar:true, caffeine:false, mood:"fruity", carbonation:65, desc:"Vibrant medley of fruit juices.", stock:100 },
+    ];
+
+    // ===== PARTICLE CANVAS =====
+    const canvas = document.getElementById('particle-canvas');
+    const ctx = canvas.getContext('2d');
+    let particles = [];
+    let mouseX = 0, mouseY = 0;
+
+    function resizeCanvas() {
+      const hero = canvas.parentElement;
+      canvas.width = hero.offsetWidth;
+      canvas.height = hero.offsetHeight;
+    }
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+    document.addEventListener('mousemove', e => { mouseX = e.clientX; mouseY = e.clientY; });
+
+    class Particle {
+      constructor() { this.reset(); }
+      reset() {
+        this.x = Math.random() * canvas.width;
+        this.y = canvas.height + 10;
+        this.size = Math.random() * 4 + 1;
+        this.speed = Math.random() * 0.8 + 0.2;
+        this.wobble = Math.random() * 2;
+        this.wobbleSpeed = Math.random() * 0.02 + 0.005;
+        this.offset = Math.random() * 100;
+        this.alpha = Math.random() * 0.5 + 0.1;
+        this.hue = Math.random() > 0.6 ? 300 : 0; // magenta-ish or white
+      }
+      update() {
+        this.y -= this.speed;
+        this.x += Math.sin(this.offset) * this.wobble;
+        this.offset += this.wobbleSpeed;
+        if (this.y < -20) this.reset();
+      }
+      draw() {
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fillStyle = this.hue === 300
+          ? `rgba(217,70,239,${this.alpha})`
+          : `rgba(255,255,255,${this.alpha * 0.5})`;
+        ctx.fill();
+      }
+    }
+
+    for (let i = 0; i < 80; i++) particles.push(new Particle());
+
+    function animateParticles() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      particles.forEach(p => { p.update(); p.draw(); });
+      // mouse interaction: draw a subtle glow
+      if (mouseX > 0 && mouseY > 0) {
+        const grad = ctx.createRadialGradient(mouseX, mouseY, 0, mouseX, mouseY, 120);
+        grad.addColorStop(0, 'rgba(217,70,239,0.06)');
+        grad.addColorStop(1, 'rgba(217,70,239,0)');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
+      requestAnimationFrame(animateParticles);
+    }
+    animateParticles();
+
+    // ===== CAN BUBBLES =====
+    const canBubbles = document.getElementById('canBubbles');
+    function spawnCanBubble() {
+      const el = document.createElement('div');
+      el.className = 'fizz-bubble';
+      const size = Math.random() * 8 + 3;
+      el.style.width = size + 'px';
+      el.style.height = size + 'px';
+      el.style.left = (Math.random() * 80 + 10) + '%';
+      el.style.top = (Math.random() * 60 + 20) + '%';
+      el.style.animationDuration = (Math.random() * 2 + 1.5) + 's';
+      el.style.animationDelay = '0s';
+      canBubbles.appendChild(el);
+      setTimeout(() => el.remove(), 3000);
+    }
+    setInterval(spawnCanBubble, 400);
+
+    // ===== MOOD FILTER =====
+    let activeMood = 'all';
+    const moodPills = document.querySelectorAll('.mood-pill');
+    moodPills.forEach(pill => {
+      pill.addEventListener('click', () => {
+        moodPills.forEach(p => p.classList.remove('active'));
+        pill.classList.add('active');
+        activeMood = pill.dataset.mood;
+        renderProducts();
+      });
+    });
+
+    // ===== CARBONATION SLIDER =====
+    const slider = document.getElementById('carbonationSlider');
+    const carbonationLabel = document.getElementById('carbonationLabel');
+    slider.addEventListener('input', () => {
+      const val = parseInt(slider.value);
+      if (val < 33) carbonationLabel.textContent = '🌊 Flat';
+      else if (val < 66) carbonationLabel.textContent = '⚡ Medium';
+      else carbonationLabel.textContent = '💥 Explosive';
+      renderProducts();
+    });
+
+    // ===== SODA CAN SVG =====
+    function sodaCanSVG(prod) {
+      const gid = 'g' + prod.id;
+      return `<svg viewBox="0 0 60 120" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:48px;height:96px;filter:drop-shadow(0 4px 12px rgba(0,0,0,0.4));flex-shrink:0;">
+        <ellipse cx="30" cy="12" rx="14" ry="4" fill="#2a2a3e" stroke="rgba(255,255,255,0.08)" stroke-width="0.5"/>
+        <rect x="16" y="10" width="28" height="4" rx="2" fill="#3a3a4e"/>
+        <rect x="14" y="14" width="32" height="92" rx="6" fill="${prod.flavorColor}" opacity="0.9"/>
+        <rect x="14" y="14" width="32" height="92" rx="6" fill="url(#${gid})" opacity="0.4"/>
+        <defs>
+          <linearGradient id="${gid}" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="white" stop-opacity="0.3"/>
+            <stop offset="30%" stop-color="white" stop-opacity="0.05"/>
+            <stop offset="100%" stop-color="black" stop-opacity="0.3"/>
+          </linearGradient>
+        </defs>
+        <ellipse cx="30" cy="108" rx="13" ry="3.5" fill="#2a2a3e" stroke="rgba(255,255,255,0.08)" stroke-width="0.5"/>
+      </svg>`;
+    }
+
+    // ===== RENDER PRODUCTS =====
+    function renderProducts() {
+      const grid = document.getElementById('productGrid');
+      const carbonationVal = parseInt(slider.value);
+      const carbonationMin = carbonationVal - 20;
+      const carbonationMax = carbonationVal + 20;
+
+      const filtered = products.filter(p => {
+        if (activeMood !== 'all' && p.mood !== activeMood) return false;
+        if (p.carbonation < carbonationMin || p.carbonation > carbonationMax) return false;
+        return true;
+      });
+
+      grid.innerHTML = '';
+      if (filtered.length === 0) {
+        grid.innerHTML = `<div class="col-span-full text-center py-20"><p class="text-2xl" style="color:var(--gray);">No fizz matches your mood right now 🫧</p><p class="mt-2 text-sm" style="color:var(--gray);">Try adjusting the slider or pick a different mood!</p></div>`;
+        return;
+      }
+
+      filtered.forEach(p => {
+        const sugarLabel = p.sugar
+          ? '<span class="sugar-tag" style="background:rgba(239,68,68,0.15);color:#ef4444;">Contains Sugar</span>'
+          : '<span class="sugar-tag" style="background:rgba(34,197,94,0.15);color:#22c55e;">Sugar-Free</span>';
+        const caffeineLabel = p.caffeine
+          ? '<span class="sugar-tag" style="background:rgba(217,70,239,0.15);color:var(--magenta);">Caffeinated</span>'
+          : '<span class="sugar-tag" style="background:rgba(161,161,170,0.15);color:#a1a1aa;">No Caffeine</span>';
+        const bars = [];
+        for (let i = 0; i < 5; i++) {
+          const filled = p.carbonation >= i * 20;
+          bars.push(`<div style="width:8px;height:${12 + i*4}px;border-radius:4px;background:${filled ? 'var(--magenta)' : 'rgba(255,255,255,0.08)'};transition:0.3s;"></div>`);
+        }
+
+        const card = document.createElement('div');
+        card.className = 'glass-card p-5 product-card flex flex-col';
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(20px)';
+        const canSVG = sodaCanSVG(p);
+        card.innerHTML = `
+          <div class="flex items-center gap-3 mb-3">
+            ${canSVG}
+            <div class="min-w-0">
+              <p class="text-xs font-semibold" style="color:var(--gray);letter-spacing:1px;">${p.brand}</p>
+              <h3 class="text-lg font-bold truncate">${p.name}</h3>
+            </div>
+            <span class="text-lg font-extrabold ml-auto" style="color:${p.flavorColor};">฿${p.price.toFixed(2)}</span>
+          </div>
+          <p class="text-xs flex-1" style="color:var(--gray);margin-bottom:12px;">${p.desc}</p>
+          <div class="flex items-end justify-between mt-auto">
+            <div class="flex flex-wrap gap-1.5">
+              ${sugarLabel}
+              ${caffeineLabel}
+            </div>
+            <span class="text-xs font-medium" style="color:var(--gray);">${p.size}</span>
+          </div>
+          <div class="flex items-end gap-1 mt-3" style="align-items:flex-end;height:32px;">
+            ${bars.join('')}
+            <span class="text-xs ml-auto" style="color:var(--gray);">fizz</span>
+          </div>
+          <button style="background:${p.flavorColor};color:white;padding:8px 16px;border-radius:999px;font-weight:700;font-size:0.75rem;border:none;cursor:pointer;transition:all 0.3s ease;margin-top:12px;width:100%;display:flex;justify-content:center;align-items:center;gap:4px;" onmouseenter="this.style.opacity='0.8';this.style.transform='scale(1.03)'" onmouseleave="this.style.opacity='1';this.style.transform='scale(1)'">Add to Cart</button>
+        `;
+        grid.appendChild(card);
+        requestAnimationFrame(() => {
+          card.style.transition = 'all 0.4s cubic-bezier(0.22, 1, 0.36, 1)';
+          card.style.opacity = '1';
+          card.style.transform = 'translateY(0)';
+        });
+      });
+    }
+
+    // initial render
+    renderProducts();
+
+    // ===== CAN MOUSE TILT =====
+    const can = document.getElementById('sodaCan');
+    document.querySelector('.hero').addEventListener('mousemove', e => {
+      const rect = can.getBoundingClientRect();
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height / 2;
+      const dx = (e.clientX - cx) / 30;
+      const dy = (e.clientY - cy) / 30;
+      can.style.transform = `rotateX(${-dy}deg) rotateY(${dx}deg)`;
+    });
+    document.querySelector('.hero').addEventListener('mouseleave', () => {
+      can.style.transform = 'rotateX(0) rotateY(0)';
+    });
+
+    console.log('🍾 FairFizz — Fizz That Matters');
+  </script>
+</body>
+</html>
