@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Windows One-Click Installer</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>⚡ Windows One-Click Installer</h1>
+            <p>Select the programs you want to install and generate a PowerShell script</p>
+        </header>
+
+        <section class="controls">
+            <button class="btn btn-select-all" onclick="toggleAll(true)">Select All</button>
+            <button class="btn btn-deselect-all" onclick="toggleAll(false)">Deselect All</button>
+            <span class="count" id="count">0 selected</span>
+        </section>
+
+        <section class="programs" id="programs">
+        </section>
+
+        <section class="actions">
+            <button class="btn btn-generate" onclick="generateScript()">📄 Generate Script</button>
+            <button class="btn btn-copy" onclick="copyScript()">📋 Copy Script</button>
+            <button class="btn btn-download" onclick="downloadScript()">💾 Download .ps1</button>
+        </section>
+
+        <section class="output" id="output" style="display:none;">
+            <h2>Generated PowerShell Script</h2>
+            <pre id="scriptContent"></pre>
+        </section>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
