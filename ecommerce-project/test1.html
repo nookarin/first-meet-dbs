@@ -77,7 +77,7 @@
       box-shadow: 0 0 24px rgba(217,70,239,0.3);
     }
 
-    .mood-pill {
+    .mood-pill, .cat-pill {
       display: flex;
       align-items: center;
       gap: 10px;
@@ -91,11 +91,11 @@
       font-weight: 600;
       user-select: none;
     }
-    .mood-pill:hover {
+    .mood-pill:hover, .cat-pill:hover {
       border-color: var(--magenta);
       color: var(--white);
     }
-    .mood-pill.active {
+    .mood-pill.active, .cat-pill.active {
       background: var(--magenta);
       border-color: var(--magenta);
       color: white;
@@ -220,13 +220,20 @@
       position: absolute;
     }
     .product-grid-inner {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-      gap: 24px;
-      position: relative;
+      display: flex;
+      gap: 20px;
+      overflow-x: auto;
+      overflow-y: hidden;
+      padding-bottom: 12px;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
     }
-    .product-grid-inner.has-hidden {
-      min-height: 400px;
+    .product-grid-inner::-webkit-scrollbar { height: 6px; }
+    .product-grid-inner::-webkit-scrollbar-track { background: rgba(255,255,255,0.03); border-radius: 3px; }
+    .product-grid-inner::-webkit-scrollbar-thumb { background: var(--magenta); border-radius: 3px; }
+    .product-grid-inner > .glass-card {
+      flex: 0 0 240px;
+      scroll-snap-align: start;
     }
 
     .sugar-tag {
@@ -300,10 +307,7 @@
     }
 
     @media (max-width: 768px) {
-      .product-grid-inner {
-        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-        gap: 16px;
-      }
+      .product-grid-inner > .glass-card { flex: 0 0 180px; }
       .soda-can {
         width: 140px;
         height: 200px;
@@ -434,8 +438,19 @@
         <p class="text-xs mt-3 text-center" style="color:var(--gray);">Slide to adjust the fizz level</p>
       </div>
 
-      <!-- Product Grid -->
-      <div class="product-grid-inner" id="productGrid"></div>
+      <!-- Sodas Row -->
+      <div class="flex items-center gap-2 mb-4 mt-2">
+        <span style="width:8px;height:8px;border-radius:50%;background:#22c55e;display:inline-block;"></span>
+        <span class="text-sm font-semibold uppercase tracking-widest" style="color:var(--gray);">Sodas</span>
+      </div>
+      <div class="product-grid-inner mb-10" id="sodaGrid"></div>
+
+      <!-- Bundles Row -->
+      <div class="flex items-center gap-2 mb-4">
+        <span style="width:8px;height:8px;border-radius:50%;background:var(--magenta);display:inline-block;"></span>
+        <span class="text-sm font-semibold uppercase tracking-widest" style="color:var(--gray);">Bundle Packs</span>
+      </div>
+      <div class="product-grid-inner" id="bundleGrid"></div>
     </div>
   </section>
 
@@ -461,27 +476,51 @@
   <script>
     // ===== PRODUCT DATA =====
     const products = [
-      { id:1, name:"Classic Cola", brand:"FairFizz", flavor:"Cola", flavorColor:"#3a0ca3", size:"355ml", price:2.49, sugar:true, caffeine:true, mood:"sweet", carbonation:70, desc:"Bold, refreshing cola with real cane sugar.", stock:150 },
-      { id:2, name:"Sugar-Free Cola", brand:"FairFizz", flavor:"Cola", flavorColor:"#3a0ca3", size:"355ml", price:2.49, sugar:false, caffeine:true, mood:"sweet", carbonation:75, desc:"All the cola taste, zero sugar.", stock:120 },
-      { id:3, name:"Sparkling Lemonade", brand:"Citrus Wave", flavor:"Lemon", flavorColor:"#facc15", size:"355ml", price:2.99, sugar:true, caffeine:false, mood:"tart", carbonation:60, desc:"Zesty lemon fizz made with real lemons.", stock:200 },
-      { id:4, name:"Diet Sparkling Lemonade", brand:"Citrus Wave", flavor:"Lemon", flavorColor:"#facc15", size:"355ml", price:2.99, sugar:false, caffeine:false, mood:"tart", carbonation:65, desc:"Sugar-free lemon bliss.", stock:180 },
-      { id:5, name:"Root Beer Float", brand:"FairFizz", flavor:"Root Beer", flavorColor:"#713f12", size:"355ml", price:3.29, sugar:true, caffeine:false, mood:"sweet", carbonation:50, desc:"Creamy root beer with a rich finish.", stock:90 },
-      { id:6, name:"Caffeine-Free Cola", brand:"FairFizz", flavor:"Cola", flavorColor:"#3a0ca3", size:"355ml", price:2.49, sugar:true, caffeine:false, mood:"sweet", carbonation:72, desc:"Classic cola, caffeine-free.", stock:75 },
-      { id:7, name:"Ginger Zing", brand:"Spice Co.", flavor:"Ginger", flavorColor:"#ea580c", size:"355ml", price:3.49, sugar:true, caffeine:false, mood:"spicy", carbonation:80, desc:"Fiery ginger kick with a crisp finish.", stock:60 },
-      { id:8, name:"Sugar-Free Ginger Zing", brand:"Spice Co.", flavor:"Ginger", flavorColor:"#ea580c", size:"355ml", price:3.49, sugar:false, caffeine:false, mood:"spicy", carbonation:82, desc:"All the heat, none of the sugar.", stock:55 },
-      { id:9, name:"Blue Raspberry Fizz", brand:"FairFizz", flavor:"Raspberry", flavorColor:"#2563eb", size:"355ml", price:2.79, sugar:true, caffeine:true, mood:"fruity", carbonation:78, desc:"Bold berry with a caffeine kick.", stock:140 },
-      { id:10, name:"Tropical Punch", brand:"Island Breeze", flavor:"Tropical", flavorColor:"#f97316", size:"355ml", price:3.29, sugar:true, caffeine:false, mood:"fruity", carbonation:55, desc:"Mango, pineapple, passion fruit.", stock:110 },
-      { id:11, name:"Diet Tropical Punch", brand:"Island Breeze", flavor:"Tropical", flavorColor:"#f97316", size:"355ml", price:3.29, sugar:false, caffeine:false, mood:"fruity", carbonation:58, desc:"Island vibes, no sugar.", stock:95 },
-      { id:12, name:"Cherry Bomb", brand:"FairFizz", flavor:"Cherry", flavorColor:"#dc2626", size:"355ml", price:2.79, sugar:true, caffeine:true, mood:"fruity", carbonation:85, desc:"Intense cherry with a caffeine charge.", stock:130 },
-      { id:13, name:"Grape Fizz", brand:"FairFizz", flavor:"Grape", flavorColor:"#7c3aed", size:"355ml", price:2.79, sugar:true, caffeine:false, mood:"fruity", carbonation:68, desc:"Sweet grape that pops.", stock:85 },
-      { id:14, name:"Orange Cream Soda", brand:"FairFizz", flavor:"Orange", flavorColor:"#f97316", size:"355ml", price:3.49, sugar:true, caffeine:false, mood:"sweet", carbonation:45, desc:"Vanilla-orange fusion.", stock:70 },
-      { id:15, name:"Large Classic Cola", brand:"FairFizz", flavor:"Cola", flavorColor:"#3a0ca3", size:"500ml", price:3.49, sugar:true, caffeine:true, mood:"sweet", carbonation:72, desc:"Bigger bottle, same bold taste.", stock:100 },
-      { id:16, name:"Large Sugar-Free Cola", brand:"FairFizz", flavor:"Cola", flavorColor:"#3a0ca3", size:"500ml", price:3.49, sugar:false, caffeine:true, mood:"sweet", carbonation:75, desc:"Big bottle, zero sugar.", stock:90 },
-      { id:17, name:"Blue Hawaii", brand:"FairFizz", flavor:"Blue Hawaii", flavorColor:"#06b6d4", size:"355ml", price:3.99, sugar:true, caffeine:false, mood:"fruity", carbonation:50, desc:"Pineapple, lime & blue curacao.", stock:80 },
-      { id:18, name:"Strawberry Lemonade", brand:"FairFizz", flavor:"Strawberry Lemonade", flavorColor:"#f43f5e", size:"355ml", price:3.49, sugar:true, caffeine:false, mood:"tart", carbonation:55, desc:"Strawberry fused with tangy lemon.", stock:110 },
-      { id:19, name:"GRAPE LEMONADE", brand:"FairFizz", flavor:"GRAPE LEMONADE", flavorColor:"#a855f7", size:"355ml", price:3.49, sugar:true, caffeine:false, mood:"fruity", carbonation:60, desc:"Bold grape meets zesty lemonade.", stock:95 },
-      { id:20, name:"MOJITO", brand:"FairFizz", flavor:"MOJITO", flavorColor:"#22c55e", size:"355ml", price:3.99, sugar:true, caffeine:false, mood:"tart", carbonation:80, desc:"Non-alcoholic mojito with mint & lime.", stock:70 },
-      { id:21, name:"Punch", brand:"FairFizz", flavor:"Punch", flavorColor:"#e11d48", size:"355ml", price:3.29, sugar:true, caffeine:false, mood:"fruity", carbonation:65, desc:"Vibrant medley of fruit juices.", stock:100 },
+      { id:1, name:"Classic Cola", brand:"FairFizz", flavor:"Cola", flavorColor:"#3a0ca3", size:"355ml", price:20, sugar:true, caffeine:true, mood:"sweet", carbonation:70, desc:"Bold, refreshing cola with real cane sugar.", stock:150 },
+      { id:2, name:"Sugar-Free Cola", brand:"FairFizz", flavor:"Cola", flavorColor:"#3a0ca3", size:"355ml", price:20, sugar:false, caffeine:true, mood:"sweet", carbonation:75, desc:"All the cola taste, zero sugar.", stock:120 },
+      { id:3, name:"Sparkling Lemonade", brand:"Citrus Wave", flavor:"Lemon", flavorColor:"#facc15", size:"355ml", price:20, sugar:true, caffeine:false, mood:"tart", carbonation:60, desc:"Zesty lemon fizz made with real lemons.", stock:200 },
+      { id:4, name:"Diet Sparkling Lemonade", brand:"Citrus Wave", flavor:"Lemon", flavorColor:"#facc15", size:"355ml", price:20, sugar:false, caffeine:false, mood:"tart", carbonation:65, desc:"Sugar-free lemon bliss.", stock:180 },
+      { id:5, name:"Root Beer Float", brand:"FairFizz", flavor:"Root Beer", flavorColor:"#713f12", size:"355ml", price:20, sugar:true, caffeine:false, mood:"sweet", carbonation:50, desc:"Creamy root beer with a rich finish.", stock:90 },
+      { id:6, name:"Caffeine-Free Cola", brand:"FairFizz", flavor:"Cola", flavorColor:"#3a0ca3", size:"355ml", price:20, sugar:true, caffeine:false, mood:"sweet", carbonation:72, desc:"Classic cola, caffeine-free.", stock:75 },
+      { id:7, name:"Ginger Zing", brand:"Spice Co.", flavor:"Ginger", flavorColor:"#ea580c", size:"355ml", price:20, sugar:true, caffeine:false, mood:"spicy", carbonation:80, desc:"Fiery ginger kick with a crisp finish.", stock:60 },
+      { id:8, name:"Sugar-Free Ginger Zing", brand:"Spice Co.", flavor:"Ginger", flavorColor:"#ea580c", size:"355ml", price:20, sugar:false, caffeine:false, mood:"spicy", carbonation:82, desc:"All the heat, none of the sugar.", stock:55 },
+      { id:9, name:"Blue Raspberry Fizz", brand:"FairFizz", flavor:"Raspberry", flavorColor:"#2563eb", size:"355ml", price:20, sugar:true, caffeine:true, mood:"fruity", carbonation:78, desc:"Bold berry with a caffeine kick.", stock:140 },
+      { id:10, name:"Tropical Punch", brand:"Island Breeze", flavor:"Tropical", flavorColor:"#f97316", size:"355ml", price:20, sugar:true, caffeine:false, mood:"fruity", carbonation:55, desc:"Mango, pineapple, passion fruit.", stock:110 },
+      { id:11, name:"Diet Tropical Punch", brand:"Island Breeze", flavor:"Tropical", flavorColor:"#f97316", size:"355ml", price:20, sugar:false, caffeine:false, mood:"fruity", carbonation:58, desc:"Island vibes, no sugar.", stock:95 },
+      { id:12, name:"Cherry Bomb", brand:"FairFizz", flavor:"Cherry", flavorColor:"#dc2626", size:"355ml", price:20, sugar:true, caffeine:true, mood:"fruity", carbonation:85, desc:"Intense cherry with a caffeine charge.", stock:130 },
+      { id:13, name:"Grape Fizz", brand:"FairFizz", flavor:"Grape", flavorColor:"#7c3aed", size:"355ml", price:20, sugar:true, caffeine:false, mood:"fruity", carbonation:68, desc:"Sweet grape that pops.", stock:85 },
+      { id:14, name:"Orange Cream Soda", brand:"FairFizz", flavor:"Orange", flavorColor:"#f97316", size:"355ml", price:20, sugar:true, caffeine:false, mood:"sweet", carbonation:45, desc:"Vanilla-orange fusion.", stock:70 },
+      { id:15, name:"Large Classic Cola", brand:"FairFizz", flavor:"Cola", flavorColor:"#3a0ca3", size:"500ml", price:20, sugar:true, caffeine:true, mood:"sweet", carbonation:72, desc:"Bigger bottle, same bold taste.", stock:100 },
+      { id:16, name:"Large Sugar-Free Cola", brand:"FairFizz", flavor:"Cola", flavorColor:"#3a0ca3", size:"500ml", price:20, sugar:false, caffeine:true, mood:"sweet", carbonation:75, desc:"Big bottle, zero sugar.", stock:90 },
+      { id:17, name:"Blue Hawaii", brand:"FairFizz", flavor:"Blue Hawaii", flavorColor:"#06b6d4", size:"355ml", price:20, sugar:true, caffeine:false, mood:"fruity", carbonation:50, desc:"Pineapple, lime & blue curacao.", stock:80 },
+      { id:18, name:"Strawberry Lemonade", brand:"FairFizz", flavor:"Strawberry Lemonade", flavorColor:"#f43f5e", size:"355ml", price:20, sugar:true, caffeine:false, mood:"tart", carbonation:55, desc:"Strawberry fused with tangy lemon.", stock:110 },
+      { id:19, name:"GRAPE LEMONADE", brand:"FairFizz", flavor:"GRAPE LEMONADE", flavorColor:"#a855f7", size:"355ml", price:20, sugar:true, caffeine:false, mood:"fruity", carbonation:60, desc:"Bold grape meets zesty lemonade.", stock:95 },
+      { id:20, name:"MOJITO", brand:"FairFizz", flavor:"MOJITO", flavorColor:"#22c55e", size:"355ml", price:20, sugar:true, caffeine:false, mood:"tart", carbonation:80, desc:"Non-alcoholic mojito with mint & lime.", stock:70 },
+      { id:21, name:"Punch", brand:"FairFizz", flavor:"Punch", flavorColor:"#e11d48", size:"355ml", price:20, sugar:true, caffeine:false, mood:"fruity", carbonation:65, desc:"Vibrant medley of fruit juices.", stock:100 },
+      { id:25, name:"Watermelon Fizz", brand:"FairFizz", flavor:"Watermelon", flavorColor:"#ff6b6b", size:"355ml", price:20, sugar:true, caffeine:false, mood:"fruity", carbonation:60, desc:"Juicy watermelon that tastes like summer in a can.", stock:100 },
+      { id:26, name:"Green Apple", brand:"FairFizz", flavor:"Green Apple", flavorColor:"#84cc16", size:"355ml", price:20, sugar:true, caffeine:false, mood:"tart", carbonation:70, desc:"Crisp, tart green apple with a sharp bite.", stock:95 },
+      { id:27, name:"Peach Bellini", brand:"FairFizz", flavor:"Peach", flavorColor:"#fb923c", size:"355ml", price:20, sugar:true, caffeine:false, mood:"sweet", carbonation:55, desc:"Ripe peach sweetness with a gentle sparkle.", stock:85 },
+      { id:28, name:"Pineapple Burst", brand:"FairFizz", flavor:"Pineapple", flavorColor:"#fbbf24", size:"355ml", price:20, sugar:true, caffeine:false, mood:"fruity", carbonation:65, desc:"Tropical pineapple that explodes with flavor.", stock:110 },
+      { id:29, name:"Coconut Cream", brand:"FairFizz", flavor:"Coconut", flavorColor:"#e2e8f0", size:"355ml", price:20, sugar:true, caffeine:false, mood:"sweet", carbonation:40, desc:"Smooth coconut cream with a light tropical fizz.", stock:75 },
+      { id:30, name:"Mango Tango", brand:"FairFizz", flavor:"Mango", flavorColor:"#f59e0b", size:"355ml", price:20, sugar:true, caffeine:false, mood:"fruity", carbonation:50, desc:"Sun-ripened mango sweetness in every sip.", stock:105 },
+      { id:31, name:"Lychee Rose", brand:"FairFizz", flavor:"Lychee", flavorColor:"#f472b6", size:"355ml", price:20, sugar:true, caffeine:false, mood:"sweet", carbonation:55, desc:"Exotic lychee with a hint of rose petals.", stock:80 },
+      { id:32, name:"Cranberry Zing", brand:"FairFizz", flavor:"Cranberry", flavorColor:"#be123c", size:"355ml", price:20, sugar:true, caffeine:false, mood:"tart", carbonation:70, desc:"Tart cranberry with a bold, crisp finish.", stock:90 },
+      { id:33, name:"Pomegranate Fizz", brand:"FairFizz", flavor:"Pomegranate", flavorColor:"#b91c1c", size:"355ml", price:20, sugar:true, caffeine:false, mood:"tart", carbonation:65, desc:"Deep, rich pomegranate with a ruby sparkle.", stock:85 },
+      { id:34, name:"Cucumber Lime", brand:"FairFizz", flavor:"Cucumber", flavorColor:"#4ade80", size:"355ml", price:20, sugar:true, caffeine:false, mood:"tart", carbonation:50, desc:"Cool cucumber and zesty lime — ultra refreshing.", stock:95 },
+      { id:35, name:"Mint Mojito", brand:"FairFizz", flavor:"Mint", flavorColor:"#34d399", size:"355ml", price:20, sugar:true, caffeine:false, mood:"spicy", carbonation:80, desc:"Fresh mint leaves and a hint of lime fizz.", stock:70 },
+      { id:36, name:"Vanilla Cream Soda", brand:"FairFizz", flavor:"Vanilla", flavorColor:"#fde68a", size:"355ml", price:20, sugar:true, caffeine:false, mood:"sweet", carbonation:35, desc:"Silky vanilla with a creamy cloud of bubbles.", stock:80 },
+      { id:37, name:"Toasted Marshmallow", brand:"FairFizz", flavor:"Marshmallow", flavorColor:"#d6d3d1", size:"355ml", price:20, sugar:true, caffeine:false, mood:"sweet", carbonation:30, desc:"Warm toasted marshmallow — a campfire in a can.", stock:60 },
+      { id:38, name:"Bubblegum Pop", brand:"FairFizz", flavor:"Bubblegum", flavorColor:"#f0abfc", size:"355ml", price:20, sugar:true, caffeine:false, mood:"sweet", carbonation:75, desc:"Nostalgic bubblegum sweetness with extra fizz.", stock:120 },
+      { id:39, name:"Cotton Candy", brand:"FairFizz", flavor:"Cotton Candy", flavorColor:"#fbcfe8", size:"355ml", price:20, sugar:true, caffeine:false, mood:"sweet", carbonation:80, desc:"Fluffy pink cotton candy spun into soda form.", stock:125 },
+      { id:40, name:"Honey Lemon", brand:"FairFizz", flavor:"Honey Lemon", flavorColor:"#fef08a", size:"355ml", price:20, sugar:true, caffeine:false, mood:"tart", carbonation:55, desc:"Golden honey meets tangy lemon in perfect harmony.", stock:90 },
+      { id:41, name:"Elderflower Spritz", brand:"FairFizz", flavor:"Elderflower", flavorColor:"#d8b4fe", size:"355ml", price:20, sugar:true, caffeine:false, mood:"sweet", carbonation:60, desc:"Floral elderflower with a delicate sparkling finish.", stock:65 },
+      { id:42, name:"Yuzu Citrus", brand:"FairFizz", flavor:"Yuzu", flavorColor:"#fde047", size:"355ml", price:20, sugar:true, caffeine:false, mood:"tart", carbonation:70, desc:"Aromatic Japanese yuzu with a bright citrus pop.", stock:55 },
+      { id:43, name:"Guava Bliss", brand:"FairFizz", flavor:"Guava", flavorColor:"#fb7185", size:"355ml", price:20, sugar:true, caffeine:false, mood:"fruity", carbonation:60, desc:"Sweet tropical guava with a lush, juicy fizz.", stock:85 },
+      { id:44, name:"Kiwi Splash", brand:"FairFizz", flavor:"Kiwi", flavorColor:"#a3e635", size:"355ml", price:20, sugar:true, caffeine:false, mood:"tart", carbonation:65, desc:"Zippy kiwi with a tangy splash of green goodness.", stock:90 },
+      { id:45, name:"Blackberry Fizz", brand:"FairFizz", flavor:"Blackberry", flavorColor:"#6b21a8", size:"355ml", price:20, sugar:true, caffeine:false, mood:"fruity", carbonation:68, desc:"Deep, dark blackberry with a bold berry kick.", stock:80 },
+      { id:22, name:"Choose Your Own 6-Pack", brand:"FairFizz", flavor:"Mix & Match", flavorColor:"#d946ef", size:"6 x 355ml", price:89, sugar:false, caffeine:false, mood:"all", carbonation:50, desc:"Pick any 6 cans from all our flavors. Build your perfect pack.", stock:999 },
+      { id:23, name:"Choose Your Own 12-Pack", brand:"FairFizz", flavor:"Mix & Match", flavorColor:"#d946ef", size:"12 x 355ml", price:169, sugar:false, caffeine:false, mood:"all", carbonation:50, desc:"Double the fun. Pick any 12 cans from all our flavors.", stock:999 },
+      { id:24, name:"Choose Your Own 24-Pack", brand:"FairFizz", flavor:"Mix & Match", flavorColor:"#d946ef", size:"24 x 355ml", price:329, sugar:false, caffeine:false, mood:"all", carbonation:50, desc:"The ultimate variety. Pick any 24 cans from all our flavors.", stock:999 },
     ];
 
     // ===== PARTICLE CANVAS =====
@@ -588,11 +627,11 @@
     // ===== SODA CAN SVG =====
     function sodaCanSVG(prod) {
       const gid = 'g' + prod.id;
-      return `<svg viewBox="0 0 60 120" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:48px;height:96px;filter:drop-shadow(0 4px 12px rgba(0,0,0,0.4));flex-shrink:0;">
-        <ellipse cx="30" cy="12" rx="14" ry="4" fill="#2a2a3e" stroke="rgba(255,255,255,0.08)" stroke-width="0.5"/>
-        <rect x="16" y="10" width="28" height="4" rx="2" fill="#3a3a4e"/>
-        <rect x="14" y="14" width="32" height="92" rx="6" fill="${prod.flavorColor}" opacity="0.9"/>
-        <rect x="14" y="14" width="32" height="92" rx="6" fill="url(#${gid})" opacity="0.4"/>
+      return `<svg viewBox="0 0 60 80" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:48px;height:64px;filter:drop-shadow(0 4px 12px rgba(0,0,0,0.4));flex-shrink:0;">
+        <ellipse cx="30" cy="8" rx="14" ry="4" fill="#2a2a3e" stroke="rgba(255,255,255,0.08)" stroke-width="0.5"/>
+        <rect x="16" y="6" width="28" height="4" rx="2" fill="#3a3a4e"/>
+        <rect x="14" y="10" width="32" height="58" rx="6" fill="${prod.flavorColor}" opacity="0.9"/>
+        <rect x="14" y="10" width="32" height="58" rx="6" fill="url(#${gid})" opacity="0.4"/>
         <defs>
           <linearGradient id="${gid}" x1="0" y1="0" x2="1" y2="0">
             <stop offset="0%" stop-color="white" stop-opacity="0.3"/>
@@ -600,36 +639,64 @@
             <stop offset="100%" stop-color="black" stop-opacity="0.3"/>
           </linearGradient>
         </defs>
-        <ellipse cx="30" cy="108" rx="13" ry="3.5" fill="#2a2a3e" stroke="rgba(255,255,255,0.08)" stroke-width="0.5"/>
+        <ellipse cx="30" cy="72" rx="13" ry="3.5" fill="#2a2a3e" stroke="rgba(255,255,255,0.08)" stroke-width="0.5"/>
+      </svg>`;
+    }
+
+    // ===== BOX SVG =====
+    function boxSVG(prod) {
+      const palette = ["#3a0ca3","#facc15","#ea580c","#2563eb","#dc2626","#7c3aed","#f97316","#06b6d4","#f43f5e","#a855f7","#22c55e","#e11d48"];
+      const dots = [];
+      for (let i = 0; i < 12; i++) {
+        const row = Math.floor(i / 4);
+        const col = i % 4;
+        dots.push(`<rect x="${8 + col * 11}" y="${12 + row * 16}" width="9" height="13" rx="3" fill="${palette[i % palette.length]}" opacity="0.45"/>`);
+        dots.push(`<rect x="${8 + col * 11}" y="${12 + row * 16}" width="9" height="13" rx="3" fill="url(#mc${prod.id}_${i})" opacity="0.25"/>`);
+        dots.push(`<ellipse cx="${12.5 + col * 11}" cy="${26 + row * 16}" rx="3.5" ry="1" fill="#2a2a3e" opacity="0.3"/>`);
+      }
+      return `<svg viewBox="0 0 60 76" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:48px;height:61px;filter:drop-shadow(0 4px 12px rgba(0,0,0,0.4));flex-shrink:0;">
+        <rect x="4" y="6" width="52" height="64" rx="5" fill="#13131a" stroke="${prod.flavorColor}" stroke-width="1.5" opacity="0.95"/>
+        <rect x="14" y="2" width="32" height="8" rx="3" fill="${prod.flavorColor}" opacity="0.25"/>
+        <rect x="5" y="7" width="50" height="62" rx="4" fill="url(#boxb${prod.id})" opacity="0.15"/>
+        <defs>
+          <linearGradient id="boxb${prod.id}" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="white" stop-opacity="0.15"/>
+            <stop offset="50%" stop-color="white" stop-opacity="0"/>
+            <stop offset="100%" stop-color="black" stop-opacity="0.2"/>
+          </linearGradient>
+        </defs>
+        ${dots.join('')}
       </svg>`;
     }
 
     // ===== RENDER PRODUCTS =====
     function renderProducts() {
-      const grid = document.getElementById('productGrid');
       const carbonationVal = parseInt(slider.value);
       const carbonationMin = carbonationVal - 20;
       const carbonationMax = carbonationVal + 20;
 
-      const filtered = products.filter(p => {
+      renderGrid('sodaGrid', products.filter(p => {
+        if (p.name.includes('Pack')) return false;
         if (activeMood !== 'all' && p.mood !== activeMood) return false;
         if (p.carbonation < carbonationMin || p.carbonation > carbonationMax) return false;
         return true;
-      });
+      }));
 
+      renderGrid('bundleGrid', products.filter(p => p.name.includes('Pack')));
+    }
+
+    function renderGrid(gridId, items) {
+      const grid = document.getElementById(gridId);
       grid.innerHTML = '';
-      if (filtered.length === 0) {
-        grid.innerHTML = `<div class="col-span-full text-center py-20"><p class="text-2xl" style="color:var(--gray);">No fizz matches your mood right now 🫧</p><p class="mt-2 text-sm" style="color:var(--gray);">Try adjusting the slider or pick a different mood!</p></div>`;
-        return;
-      }
-
-      filtered.forEach(p => {
-        const sugarLabel = p.sugar
+      if (items.length === 0) return;
+      items.forEach(p => {
+        const isBundle = p.name.includes('Pack');
+        const sugarLabel = isBundle ? '' : (p.sugar
           ? '<span class="sugar-tag" style="background:rgba(239,68,68,0.15);color:#ef4444;">Contains Sugar</span>'
-          : '<span class="sugar-tag" style="background:rgba(34,197,94,0.15);color:#22c55e;">Sugar-Free</span>';
-        const caffeineLabel = p.caffeine
+          : '<span class="sugar-tag" style="background:rgba(34,197,94,0.15);color:#22c55e;">Sugar-Free</span>');
+        const caffeineLabel = isBundle ? '' : (p.caffeine
           ? '<span class="sugar-tag" style="background:rgba(217,70,239,0.15);color:var(--magenta);">Caffeinated</span>'
-          : '<span class="sugar-tag" style="background:rgba(161,161,170,0.15);color:#a1a1aa;">No Caffeine</span>';
+          : '<span class="sugar-tag" style="background:rgba(161,161,170,0.15);color:#a1a1aa;">No Caffeine</span>');
         const bars = [];
         for (let i = 0; i < 5; i++) {
           const filled = p.carbonation >= i * 20;
@@ -640,15 +707,21 @@
         card.className = 'glass-card p-5 product-card flex flex-col';
         card.style.opacity = '0';
         card.style.transform = 'translateY(20px)';
-        const canSVG = sodaCanSVG(p);
+        const clipart = p.name.includes('Pack') ? boxSVG(p) : sodaCanSVG(p);
+        function sizePrice(ml) {
+          if (ml === 500) return 25;
+          if (ml === 1000) return 45;
+          return 20;
+        }
+        const fmtPrice = (v) => '฿' + v.toFixed(2);
         card.innerHTML = `
           <div class="flex items-center gap-3 mb-3">
-            ${canSVG}
+            ${clipart}
             <div class="min-w-0">
               <p class="text-xs font-semibold" style="color:var(--gray);letter-spacing:1px;">${p.brand}</p>
               <h3 class="text-lg font-bold truncate">${p.name}</h3>
             </div>
-            <span class="text-lg font-extrabold ml-auto" style="color:${p.flavorColor};">฿${p.price.toFixed(2)}</span>
+            <span class="text-lg font-extrabold ml-auto size-price" style="color:${p.flavorColor};">${isBundle ? fmtPrice(p.price) : fmtPrice(sizePrice(355))}</span>
           </div>
           <p class="text-xs flex-1" style="color:var(--gray);margin-bottom:12px;">${p.desc}</p>
           <div class="flex items-end justify-between mt-auto">
@@ -656,11 +729,16 @@
               ${sugarLabel}
               ${caffeineLabel}
             </div>
-            <span class="text-xs font-medium" style="color:var(--gray);">${p.size}</span>
+            <span class="text-xs font-medium size-label" style="color:var(--gray);">355ml</span>
+          </div>
+          <div class="flex rounded-full overflow-hidden border mt-2" style="border-color:rgba(255,255,255,0.1);${isBundle ? 'display:none;' : ''}">
+            <div class="size-opt flex-1 text-center py-1 text-xs font-semibold cursor-pointer transition-all" data-pid="${p.id}" data-ml="355" style="background:${p.flavorColor};color:white;">355ml</div>
+            <div class="size-opt flex-1 text-center py-1 text-xs font-semibold cursor-pointer transition-all" data-pid="${p.id}" data-ml="500" style="background:transparent;color:var(--gray);">500ml</div>
+            <div class="size-opt flex-1 text-center py-1 text-xs font-semibold cursor-pointer transition-all" data-pid="${p.id}" data-ml="1000" style="background:transparent;color:var(--gray);">1L</div>
           </div>
           <div class="flex items-end gap-1 mt-3" style="align-items:flex-end;height:32px;">
             ${bars.join('')}
-            <span class="text-xs ml-auto" style="color:var(--gray);">fizz</span>
+            <span class="text-xs ml-auto" style="color:var(--gray);">fizziness</span>
           </div>
           <button style="background:${p.flavorColor};color:white;padding:8px 16px;border-radius:999px;font-weight:700;font-size:0.75rem;border:none;cursor:pointer;transition:all 0.3s ease;margin-top:12px;width:100%;display:flex;justify-content:center;align-items:center;gap:4px;" onmouseenter="this.style.opacity='0.8';this.style.transform='scale(1.03)'" onmouseleave="this.style.opacity='1';this.style.transform='scale(1)'">Add to Cart</button>
         `;
@@ -672,6 +750,25 @@
         });
       });
     }
+
+    // ===== SIZE SELECTOR =====
+    document.getElementById('sodaGrid').addEventListener('click', e => {
+      const opt = e.target.closest('.size-opt');
+      if (!opt) return;
+      const pid = parseInt(opt.dataset.pid);
+      const ml = parseInt(opt.dataset.ml);
+      const product = products.find(p => p.id === pid);
+      const card = opt.closest('.glass-card');
+      card.querySelectorAll('.size-opt').forEach(el => {
+        el.style.background = 'transparent';
+        el.style.color = 'var(--gray)';
+      });
+      opt.style.background = product.flavorColor;
+      opt.style.color = 'white';
+      const total = ml === 500 ? 25 : ml === 1000 ? 45 : 20;
+      card.querySelector('.size-price').textContent = '฿' + total.toFixed(2);
+      card.querySelector('.size-label').textContent = ml === 1000 ? '1L' : ml + 'ml';
+    });
 
     // initial render
     renderProducts();
